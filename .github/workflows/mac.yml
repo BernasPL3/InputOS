@@ -1,0 +1,57 @@
+name: Build InputOS
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyinstaller
+          pip install -r requirements.txt
+
+      - name: Build macOS App
+        run: |
+          pyinstaller \
+          --windowed \
+          --onefile \
+          --name "InputOS" \
+          --osx-bundle-identifier com.inputos.app \
+          App/main.py
+
+      - name: Create App Bundle Folder
+        run: |
+          mkdir Release
+          cp -R dist/InputOS.app Release/
+
+      - name: Create DMG
+        run: |
+          hdiutil create -volname "InputOS" \
+          -srcfolder Release \
+          -ov \
+          -format UDZO \
+          InputOS.dmg
+
+      - name: Upload APP
+        uses: actions/upload-artifact@v4
+        with:
+          name: InputOS-app
+          path: Release/InputOS.app
+
+      - name: Upload DMG
+        uses: actions/upload-artifact@v4
+        with:
+          name: InputOS-dmg
+          path: InputOS.dmg
