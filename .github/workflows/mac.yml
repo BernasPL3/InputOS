@@ -7,8 +7,11 @@ jobs:
   build:
     runs-on: macos-latest
 
+    env:
+      MACOSX_DEPLOYMENT_TARGET: "11.0"
+
     steps:
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v4
 
       - name: Setup Python
@@ -23,25 +26,31 @@ jobs:
       - name: Install dependencies
         run: |
           pip install pyinstaller
-          pip install PyQt5 pygame opencv-python numpy
+          pip install PyQt5 pygame numpy
 
-      - name: Verify files
+      - name: Build App
         run: |
-          ls
-          ls App
+          pyinstaller \
+          --windowed \
+          --onedir \
+          --name InputOS \
+          --target-architecture universal2 \
+          App/main.py
 
-      - name: Build InputOS
+      - name: Verify build
         run: |
-          pyinstaller --windowed --onedir App/main.py --name InputOS
+          ls dist
+          ls dist/InputOS.app
 
-      - name: Create Release folder
+      - name: Create Release
         run: |
           mkdir Release
           cp -R dist/InputOS.app Release/
 
-      - name: Build DMG
+      - name: Create DMG
         run: |
-          hdiutil create -volname "InputOS" \
+          hdiutil create \
+          -volname "InputOS" \
           -srcfolder Release \
           -ov \
           -format UDZO \
@@ -50,11 +59,11 @@ jobs:
       - name: Upload APP
         uses: actions/upload-artifact@v4
         with:
-          name: InputOS-app
+          name: InputOS-macOS-App
           path: Release/InputOS.app
 
       - name: Upload DMG
         uses: actions/upload-artifact@v4
         with:
-          name: InputOS-dmg
+          name: InputOS-macOS-DMG
           path: InputOS.dmg
